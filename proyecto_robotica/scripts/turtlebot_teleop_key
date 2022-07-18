@@ -1,0 +1,174 @@
+#!/usr/bin/env python
+
+import rospy
+from geometry_msgs.msg import Twist
+
+mensaje = """
+CTRL-C para salir
+"""
+
+# Variables globales para el giro
+PI = 3.1415926535897
+
+# Variables globales para la posicion
+pos_inicial = [0,0]
+por_rel = [0,0]
+
+# Posicion de las mesas
+mesa_1 = [0,1]
+mesa_2 = [0,3]
+mesa_3 = [0,4]
+mesa_4 = [4,4]
+mesa_5 = [4,2]
+mesa_6 = [5,-3]
+mesa_7 = [7,-3]
+mesa_8 = [9,-3]
+
+def avanzar_baldozas (pub,baldozas):
+	twist = Twist()
+        twist.linear.x = 0.5
+        twist.linear.y = 0
+        twist.linear.z = 0
+        twist.angular.x = 0
+        twist.angular.y = 0
+        twist.angular.z = 0
+        for factor in range(baldozas * 20):
+        	pub.publish(twist)
+        	rospy.sleep(0.1)
+        twist.linear.x = 0
+        pub.publish(twist)
+        
+def girar (pub,cuartos,sentido):
+	twist = Twist()
+	
+	velocidad = 10
+	velocidad_angular = velocidad * 2*PI / 360
+	angulo = 90 * cuartos * 1.1
+	angulo_relativo = angulo * 2*PI / 360
+	
+	twist.linear.x = 0
+        twist.linear.y = 0
+        twist.linear.z = 0
+        twist.angular.x = 0
+        twist.angular.y = 0
+        if sentido is "izquierda":
+        	twist.angular.z = abs(velocidad_angular)
+        elif sentido is "derecha":
+        	twist.angular.z = -abs(velocidad_angular)
+        else:
+        	print("Sentido ingresado incorrecto")
+
+	t0 = rospy.Time.now().to_sec()	
+	angulo_actual = 0
+	while(angulo_actual < angulo_relativo):
+		pub.publish(twist)
+		t1 = rospy.Time.now().to_sec()
+		angulo_actual = velocidad_angular * (t1 - t0)	
+	twist.angular.z = 0
+	pub.publish(twist)
+
+if __name__=="__main__":
+
+    rospy.init_node('haciendo_caminar_mesero')
+    pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+
+    try:
+    	# Mensaje de bienvenida
+        print(mensaje)
+        
+	# Avanzo hasta la posicion inicial?
+	print("Todas los movimientos futuros seran calculados en base a la posicion inicial")
+	opcion_invalida = True
+	while (opcion_invalida):
+		inicio = str(raw_input("Avanzar hasta la posicion inicial? (s/n): ")).lower().strip()
+		if inicio == "s":
+			avanzar_baldozas(pub,6)
+			girar(pub,2,"derecha")
+			opcion_invalida = False
+		elif inicio == "n":
+			opcion_invalida = False
+		else:
+			print("Opcion ingresada invalida")
+	
+	# A que mesa debo ir?
+	salir = False
+	while (not salir):
+		mesa = str(input("A que mesa se desplaza el robot? [1-8] 'q' para salir: ")).lower().strip()
+		if mesa == "1":
+			print("Avanza a la mesa 1")
+			avanzar_baldozas(pub,mesa_1[1])
+			girar(pub,2,"derecha")
+			salir = True
+		elif mesa == "2":
+			print("Avanza a la mesa 2")
+			avanzar_baldozas(pub,mesa_2[1])
+			girar(pub,2,"derecha")
+			salir = True
+		elif mesa == "3":
+			print("Avanza a la mesa 3")
+			avanzar_baldozas(pub,mesa_3[1])
+			girar(pub,2,"derecha")
+			salir = True
+		elif mesa == "4":
+			print("Avanza a la mesa 4")
+			girar(pub,0.88,"izquierda")
+			avanzar_baldozas(pub,mesa_4[0])
+			girar(pub,1.22,"derecha")
+			avanzar_baldozas(pub,mesa_4[1])
+			girar(pub,2.2,"derecha")
+			salir = True
+		elif mesa == "5":
+			print("Avanza a la mesa 5")
+			girar(pub,0.88,"izquierda")
+			avanzar_baldozas(pub,mesa_5[0])
+			girar(pub,1.22,"derecha")
+			avanzar_baldozas(pub,mesa_5[1])
+			girar(pub,2.2,"derecha")
+			salir = True
+		elif mesa == "6":
+			print("Avanza a la mesa 6")
+			girar(pub,0.88,"izquierda")
+			avanzar_baldozas(pub,mesa_4[0])
+			girar(pub,0.8,"izquierda")
+			avanzar_baldozas(pub,abs(mesa_6[1]))
+			girar(pub,1.19,"derecha")
+			avanzar_baldozas(pub,abs(mesa_6[0])-abs(mesa_4[0]))
+			salir = True
+		elif mesa == "7":
+			print("Avanza a la mesa 7")
+			girar(pub,0.88,"izquierda")
+			avanzar_baldozas(pub,mesa_4[0])
+			girar(pub,0.8,"izquierda")
+			avanzar_baldozas(pub,abs(mesa_7[1]))
+			girar(pub,1.19,"derecha")
+			avanzar_baldozas(pub,abs(mesa_7[0])-abs(mesa_4[0]))
+			salir = True
+		elif mesa == "8":
+			print("Avanza a la mesa 8")
+			girar(pub,0.88,"izquierda")
+			avanzar_baldozas(pub,mesa_4[0])
+			girar(pub,0.8,"izquierda")
+			avanzar_baldozas(pub,abs(mesa_8[1]))
+			girar(pub,1.19,"derecha")
+			avanzar_baldozas(pub,abs(mesa_8[0])-abs(mesa_4[0]))
+			salir = True
+		elif mesa == "q":
+			print("Saliendo")
+			salir = True
+		else:
+			print("Opcion ingresada invalida")
+	
+	print("Final de ejecucion del programa")
+        
+    except Exception as e:
+        print(e)
+
+    finally:
+        twist = Twist()
+        twist.linear.x = 0
+        twist.linear.y = 0
+        twist.linear.z = 0
+        twist.angular.x = 0
+        twist.angular.y = 0
+        twist.angular.z = 0
+        pub.publish(twist)

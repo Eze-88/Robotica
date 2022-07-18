@@ -1,0 +1,8 @@
+export LOCALIZATION=cartographer
+export RVIZ=false
+export LASER=rplidar
+roslaunch ca_gazebo create_restaurant.launch
+# Move around the robot using keyboard teleop. Hacerle lazos cerrados
+roslaunch ca_tools keyboard_teleop.launch
+
+roslaunch proyecto_robotica poseMesRes.launch
